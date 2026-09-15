@@ -1,0 +1,41 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "unicorn", "oxc"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "ignorePatterns": ["dist", "server/dist", "node_modules", "server/node_modules"],
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "no-empty": ["error", { "allowEmptyCatch": true }],
+
+    // The Jellyfin API returns loosely-typed payloads narrowed at the call site.
+    "typescript/no-explicit-any": "off",
+
+    // React Compiler advisories. These flag real (mostly performance) smells in
+    // the existing components, but fixing them means changing effect and memo
+    // behaviour, so they are warnings to work through rather than build errors.
+    "react/purity": "warn",
+    "react/set-state-in-effect": "warn",
+    "react/preserve-manual-memoization": "warn",
+    "react/immutability": "warn",
+    "react/refs": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+
+    // Express 5 forwards a rejected promise to the error handler, so async
+    // route handlers are safe here.
+    "oxc/no-async-endpoint-handlers": "off"
+  },
+  "overrides": [
+    {
+      "files": ["src/**/*.{ts,tsx}"],
+      "env": { "browser": true }
+    },
+    {
+      "files": ["server/src/**/*.ts"],
+      "env": { "node": true }
+    }
+  ]
+}

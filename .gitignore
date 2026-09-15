@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Build output — regenerated from src/ and public/ on every build,
+# never edit or commit files here (see CONTRIBUTING.md)
+dist/
+server/dist/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Local runtime data (SQLite db, encryption secret, artwork cache)
+data/
+server/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.capsule-secret
+
+# Env files
+.env
+.env.local
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*

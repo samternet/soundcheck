@@ -1,0 +1,15 @@
+# Store and check out text files with LF on every platform, matching
+# .editorconfig and Prettier. Without this, Git on Windows converts files to
+# CRLF on checkout, which fails `npm run format:check` and can break files
+# copied into the Linux containers.
+* text=auto eol=lf
+
+# Binary assets — never touch their bytes.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

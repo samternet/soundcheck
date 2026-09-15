@@ -1,0 +1,7 @@
+node_modules/
+server/node_modules/
+dist/
+server/dist/
+package-lock.json
+server/package-lock.json
+*.tsbuildinfo

@@ -1,0 +1,35 @@
+# Settings live in `.env` (copy `.env.example` to get started) — see the
+# README's Configuration section. Values here only wire the containers together.
+name: sound-capsule
+services:
+  api:
+    build:
+      context: ./server
+    container_name: sound-capsule-api
+    restart: unless-stopped
+    environment:
+      # Internal wiring, not settings: nginx reaches the API on port 4000 and
+      # the data volume is mounted at /data, so these must stay as they are.
+      PORT: 4000
+      DATA_DIR: /data
+      TZ: ${TZ:?TZ is not set. Copy .env.example to .env and set your timezone, e.g. TZ=Asia/Kolkata}
+      JELLYFIN_URL: ${JELLYFIN_URL:-}
+      JELLYFIN_PUBLIC_URL: ${JELLYFIN_PUBLIC_URL:-}
+      JELLYFIN_TAILSCALE_URL: ${JELLYFIN_TAILSCALE_URL:-}
+    volumes:
+      - capsule-data:/data
+
+  sound-capsule:
+    build: .
+    container_name: sound-capsule
+    ports:
+      - '${SOUND_CAPSULE_PORT:-7096}:80'
+    depends_on:
+      - api
+    environment:
+      TZ: ${TZ:?TZ is not set. Copy .env.example to .env and set your timezone, e.g. TZ=Asia/Kolkata}
+    restart: unless-stopped
+
+volumes:
+  capsule-data:
+    name: sound-capsule_capsule-data

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fbf6ec" />
+    <script>
+      // Runs before first paint so the app never flashes the wrong theme.
+      // Mirrors resolveTheme() in src/lib/theme.ts — keep the key in sync.
+      try {
+        var t = localStorage.getItem('capsule-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+        if (t === 'dark') {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#16121a');
+        }
+      } catch (e) {}
+    </script>
+    <title>Sound Capsule — Your music taste, quantified</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
