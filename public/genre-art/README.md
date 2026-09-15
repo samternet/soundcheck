@@ -2,7 +2,7 @@
 
 ## Source
 
-These images were created for Sound Capsule with an AI image generator. They
+These images were created for Soundcheck with an AI image generator. They
 are original artwork, not photos of real artists or copies of album covers, and
 are distributed with the project under its license (see `LICENSE`).
 

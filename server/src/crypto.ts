@@ -7,7 +7,7 @@ const OWNER_READ_WRITE = 0o600
 
 fs.mkdirSync(DATA_DIR, { recursive: true })
 let secret: string
-if (process.env.CAPSULE_SECRET) secret = process.env.CAPSULE_SECRET
+if (process.env.SOUNDCHECK_SECRET) secret = process.env.SOUNDCHECK_SECRET
 else {
   if (!fs.existsSync(SECRET_FILE))
     fs.writeFileSync(SECRET_FILE, crypto.randomBytes(SECRET_BYTES).toString('hex'), {

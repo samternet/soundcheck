@@ -36,7 +36,7 @@ import type {
 import { routeFromPath, pathForView, type View } from './lib/routes'
 import {
   getHeroCopy,
-  buildCapsuleInsights,
+  buildListeningInsights,
   listeningPersonality,
   greeting,
   topArtistSentences,
@@ -128,7 +128,7 @@ export function App() {
             <LogoIcon size={26} strokeWidth={2.4} />
           </div>
         </div>
-        <strong>Sound Capsule</strong>
+        <strong>Soundcheck</strong>
         <span className="boot-tagline">{APP_TAGLINE}</span>
         <span>Putting your listening story together…</span>
       </div>
@@ -174,7 +174,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
     persistTheme(next)
   }
   const [profileArtwork, setProfileArtwork] = useState<string | null>(null)
-  const [capsuleInsight, setCapsuleInsight] = useState('')
+  const [listeningInsight, setListeningInsight] = useState('')
   const [songDetail, setSongDetail] = useState<SongDetail | null>(null)
   const [songDetailLoading, setSongDetailLoading] = useState(false)
   const [songDetailError, setSongDetailError] = useState('')
@@ -186,7 +186,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
   const [albumDetail, setAlbumDetail] = useState<AlbumDetail | null>(null)
   const [albumDetailLoading, setAlbumDetailLoading] = useState(false)
   const [albumDetailError, setAlbumDetailError] = useState('')
-  const capsuleInsightInitialized = useRef(false)
+  const listeningInsightInitialized = useRef(false)
   const [availableYears, setAvailableYears] = useState<number[]>([])
   // Seeded eagerly rather than left null: `selectedYear` is a dependency of the
   // loader effect, so a null -> year transition after the first fetch re-ran the
@@ -438,9 +438,9 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
 
   useEffect(() => {
     if (!data) return
-    capsuleInsightInitialized.current = false
-    capsuleInsightInitialized.current = true
-    const choices = buildCapsuleInsights(data)
+    listeningInsightInitialized.current = false
+    listeningInsightInitialized.current = true
+    const choices = buildListeningInsights(data)
     const stored = Number(safeStorage.get(sessionStorage, STORAGE_KEYS.lastInsight))
     let index = Math.floor(Math.random() * choices.length)
     if (
@@ -453,7 +453,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
       index = (index + 1) % choices.length
     }
     safeStorage.set(sessionStorage, STORAGE_KEYS.lastInsight, String(index))
-    setCapsuleInsight(choices[index])
+    setListeningInsight(choices[index])
   }, [data?.year])
 
   useEffect(() => {
@@ -765,7 +765,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
             {me?.serverTracking ? 'Connected to Jellyfin' : 'Not Connected to Jellyfin'}
           </div>
         )}
-        <div className="nav-label">YOUR CAPSULE</div>
+        <div className="nav-label">YOUR SOUNDCHECK</div>
         {navigation}
         <div className="nav-bottom">
           <button
@@ -790,12 +790,12 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
             <LogoIcon size={16} strokeWidth={2.4} />
           </span>
           <div>
-            <b>Sound Capsule</b>
+            <b>Soundcheck</b>
             <small>{APP_TAGLINE}</small>
             <button
               type="button"
               className="footer-version footer-version-link"
-              title="About Sound Capsule"
+              title="About Soundcheck"
               onClick={() => navigate('about')}
             >
               v{APP_VERSION}
@@ -826,7 +826,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
                           : 'Dashboard'}
             </span>
             <small>
-              {view === 'about' ? `Sound Capsule v${APP_VERSION}` : `${year} listening story`}
+              {view === 'about' ? `Soundcheck v${APP_VERSION}` : `${year} listening story`}
             </small>
           </div>
           <div className="topbar-spacer" />
@@ -937,7 +937,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
               {session.user.isAdministrator && (
                 <button onClick={sync} disabled={syncing}>
                   <RefreshCw size={15} className={syncing ? 'spin' : ''} />{' '}
-                  {syncing ? 'Refreshing…' : 'Refresh my Capsule'}
+                  {syncing ? 'Refreshing…' : 'Refresh my Soundcheck'}
                 </button>
               )}
             </div>
@@ -1078,7 +1078,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
                   })}
                 </ol>
                 {!data?.topSongs?.length && (
-                  <Locked message="No plays yet. Start listening in Jellyfin and your Capsule will grow here." />
+                  <Locked message="No plays yet. Start listening in Jellyfin and your Soundcheck will grow here." />
                 )}
               </Card>
               <Card
@@ -1263,7 +1263,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
                     ) : (
                       <>
                         <div>◐</div>
-                        <span>CAPSULE</span>
+                        <span>SOUNDCHECK</span>
                       </>
                     )}
                   </div>
@@ -1363,7 +1363,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
                   })}
                 </div>
                 {!exploredArtists.length && (
-                  <Locked message="No plays yet. Start listening in Jellyfin and your Capsule will grow here." />
+                  <Locked message="No plays yet. Start listening in Jellyfin and your Soundcheck will grow here." />
                 )}
               </Card>
               <Card className="personality-card">
@@ -1441,7 +1441,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
                     <span>
                       {peak?.value
                         ? `Your listening peaks around ${hourRanges[hourBuckets.indexOf(peak)]}.`
-                        : 'Keep listening and Sound Capsule will find your peak.'}
+                        : 'Keep listening and Soundcheck will find your peak.'}
                     </span>
                   </div>
                   <div className="peak-badge">
@@ -1478,12 +1478,12 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
                   </div>
                 </div>
               </Card>
-              <Card className="capsule-one-line-card">
-                <CardHeader title="Your Capsule in one line" />
+              <Card className="insight-line-card">
+                <CardHeader title="Your Soundcheck in one line" />
                 <div className="one-line">
                   <div className="quote-mark">“</div>
                   <p>
-                    {capsuleInsight || 'Your listening story is taking shape one song at a time.'}
+                    {listeningInsight || 'Your listening story is taking shape one song at a time.'}
                   </p>
                   <AudioLines size={20} />
                 </div>

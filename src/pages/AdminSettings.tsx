@@ -86,7 +86,7 @@ export function AdminSettings({
     <div className="settings-shell">
       <div className="settings-top">
         <button className="back-button" onClick={onBack}>
-          <ArrowLeft size={16} /> Back to Sound Capsule
+          <ArrowLeft size={16} /> Back to Soundcheck
         </button>
         <div className="settings-title">
           <div className="settings-icon">
@@ -144,7 +144,7 @@ export function AdminSettings({
             <strong>Every 5 seconds</strong>
           </div>
           <div className="privacy-box">
-            <strong>Sound Capsule works quietly in the background.</strong>
+            <strong>Soundcheck works quietly in the background.</strong>
             <p>
               Listening statistics are collected gradually from Jellyfin's standard Sessions API.
             </p>
@@ -196,7 +196,7 @@ export function AdminSettings({
               <div>
                 <h3>Unlock All Widgets</h3>
                 <small>
-                  Sound Capsule unlocks more widgets as your listening history grows, but you can
+                  Soundcheck unlocks more widgets as your listening history grows, but you can
                   unlock all widgets now by toggling the switch below.
                 </small>
               </div>

@@ -2,7 +2,7 @@
  * Every outbound link the app shows, in one place. Anyone running a fork only
  * needs to change the repository and support URLs here.
  */
-export const REPO_URL = 'https://github.com/samternet/sound-capsule'
+export const REPO_URL = 'https://github.com/samternet/soundcheck'
 
 export const LINKS = {
   repository: REPO_URL,

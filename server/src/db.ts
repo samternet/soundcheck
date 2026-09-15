@@ -89,7 +89,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_connections_server_user ON connections(ser
 addColumnIfMissing('connections', 'public_url', 'TEXT')
 addColumnIfMissing('connections', 'tailscale_url', 'TEXT')
 addColumnIfMissing('connections', 'device_id', 'TEXT')
-// Every Sound Capsule login used to identify itself to Jellyfin with the exact same
+// Every Soundcheck login used to identify itself to Jellyfin with the exact same
 // hardcoded DeviceId, so a second login (another browser, or the same account from a
 // different network) looked like the same device re-authenticating and could
 // invalidate a token an already-open tab was still using. The admin/tracker
@@ -291,7 +291,7 @@ export function getConnection(id: string) {
   return (db.prepare('SELECT * FROM connections WHERE id = ?').get(id) as any) || null
 }
 
-// Sound Capsule is single-server by design (see removeOtherServerConnections), so
+// Soundcheck is single-server by design (see removeOtherServerConnections), so
 // there is at most one row here — this powers the login screen's "we already
 // know your server" shortcut without the caller needing a server ID upfront.
 export function getFirstConnection() {
@@ -438,7 +438,7 @@ export function ensureTrackingStart(userId: string) {
   }
 }
 
-export function capsuleMeta(userId: string) {
+export function trackingMeta(userId: string) {
   const meta = ensureTrackingStart(userId)
   const years = (
     db
@@ -495,7 +495,7 @@ const GENRE_DAILY_WINDOW_DAYS = 90
 
 export function stats(userId: string, year: number) {
   // All calendar-based reporting is evaluated in the container's configured
-  // timezone (TZ). This keeps Sound Capsule correct for installations outside UTC.
+  // timezone (TZ). This keeps Soundcheck correct for installations outside UTC.
   const base = { userId, year: String(year) }
   const yearWhere = `strftime('%Y',started_at/1000,'unixepoch','localtime')=@year`
 

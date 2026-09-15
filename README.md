@@ -1,4 +1,4 @@
-# Sound Capsule
+# Soundcheck
 
 *Your music taste, quantified*
 
@@ -6,26 +6,26 @@ A year-in-review listening recap for your own
 **Jellyfin** server — self-hosted, database-first, and built to go a lot
 deeper than a top-5 list.
 
-> **Beta.** Sound Capsule is feature-complete and in daily use, but still young.
-> Please [report anything that looks wrong](https://github.com/samternet/sound-capsule/issues).
+> **Beta.** Soundcheck is feature-complete and in daily use, but still young.
+> Please [report anything that looks wrong](https://github.com/samternet/soundcheck/issues).
 >
 > **AI-assisted.** Parts of the code, documentation and genre artwork were created
 > with the help of AI models, and reviewed and tested by the maintainer.
 >
-> **Unofficial project.** Sound Capsule is a community project and is
+> **Unofficial project.** Soundcheck is a community project and is
 > not affiliated with or endorsed by the Jellyfin project. "Jellyfin" is a
 > trademark of its respective owners.
 
 <p align="center">
-  <img src="docs/images/dashboard-light.png" width="49%" alt="Sound Capsule dashboard showing listening totals, top tracks and top artist, light mode">
-  <img src="docs/images/dashboard-dark.png" width="49%" alt="Sound Capsule dashboard showing listening totals, top tracks and top artist, dark mode">
+  <img src="docs/images/dashboard-light.png" width="49%" alt="Soundcheck dashboard showing listening totals, top tracks and top artist, light mode">
+  <img src="docs/images/dashboard-dark.png" width="49%" alt="Soundcheck dashboard showing listening totals, top tracks and top artist, dark mode">
 </p>
 <p align="center"><sub>Light mode · Dark mode</sub></p>
 
 
 ## What it is
 
-Sound Capsule connects to your Jellyfin server, quietly tracks
+Soundcheck connects to your Jellyfin server, quietly tracks
 listening in the background, and turns that history into a detailed,
 personal dashboard: top tracks/artists/albums, a genre breakdown with a
 diversity score, a listening-activity view with an hour-of-day chart, a
@@ -40,17 +40,17 @@ required beyond signing in.
 
 ## What it isn't
 
-Sound Capsule deliberately does **not** use Jellyfin Webhooks, a
+Soundcheck deliberately does **not** use Jellyfin Webhooks, a
 Server-Sent-Events plugin, a browser live-playback stream, or the Playback
 Reporting plugin. It uses a single, boring, reliable mechanism instead:
 polling Jellyfin's standard `/Sessions` API every few seconds. That
-trade-off means Sound Capsule favors **correct historical statistics over
-real-time playback display**, and it means the only thing Sound Capsule
+trade-off means Soundcheck favors **correct historical statistics over
+real-time playback display**, and it means the only thing Soundcheck
 needs from your Jellyfin server is an admin login — no plugins to install,
 nothing else to keep in sync.
 
 One real limitation follows from this: Jellyfin doesn't expose a
-reconstructable per-play history, so Sound Capsule can only start building
+reconstructable per-play history, so Soundcheck can only start building
 detailed statistics from the moment tracking is enabled. Your existing
 Jellyfin play counts can't be converted into a backdated timeline.
 
@@ -76,13 +76,13 @@ length, and your 10 most recently played tracks.
 
 **Works from anywhere you actually are** — three-bucket URL resolution
 means "Open in Jellyfin" links resolve correctly whether you're on the
-same local network, on Tailscale, or reaching Sound Capsule through a
+same local network, on Tailscale, or reaching Soundcheck through a
 public domain, without you having to think about it.
 
 **Multi-user, one admin setup** — the first login to a new server must be
 a Jellyfin administrator, who connects the server once; the background
 tracker then records listening for every Jellyfin user on that server,
-even ones who've never opened Sound Capsule. Each user only ever sees
+even ones who've never opened Soundcheck. Each user only ever sees
 their own statistics, and their password is never stored.
 
 ## Screenshots
@@ -112,13 +112,13 @@ you'll see your own library's artwork.</sub>
 You need a running Jellyfin server and Docker.
 
 ```bash
-git clone https://github.com/samternet/sound-capsule.git
-cd sound-capsule
+git clone https://github.com/samternet/soundcheck.git
+cd soundcheck
 cp .env.example .env
 ```
 
 Open `.env` and set `TZ` to your timezone (for example `TZ=Asia/Kolkata` for
-India). Sound Capsule won't start until it's set, because it decides where each
+India). Soundcheck won't start until it's set, because it decides where each
 day of your listening begins. Then start it:
 
 ```bash
@@ -126,8 +126,8 @@ docker compose up -d --build
 ```
 
 Open `http://localhost:7096`. The first person to sign in **must be a
-Jellyfin administrator** — that one-time login is what connects Sound
-Capsule to your server and starts the background tracker. After that,
+Jellyfin administrator** — that one-time login is what connects Soundcheck
+to your server and starts the background tracker. After that,
 anyone else on the server can sign in with their own Jellyfin username and
 password and get their own dashboard.
 
@@ -140,12 +140,12 @@ it, run `docker compose up -d` to apply.
 | Variable | Default | Purpose |
 |---|---|---|
 | `TZ` | **required** | Timezone for daily and monthly statistics, as an IANA name such as `Asia/Kolkata`, `Europe/London` or `America/New_York`. Abbreviations like `IST` aren't reliable because several countries share them. |
-| `SOUND_CAPSULE_PORT` | `7096` | Port Sound Capsule is served on. |
+| `SOUNDCHECK_PORT` | `7096` | Port Soundcheck is served on. |
 | `JELLYFIN_URL` | *(empty)* | Pre-fills the server address on the very first admin setup screen only. Has no effect once a server is connected. |
-| `JELLYFIN_PUBLIC_URL` | *(empty)* | Your Jellyfin server's public domain (e.g. `https://jellyfin.example.com`), used only to build "Open in Jellyfin" links when Sound Capsule is accessed from outside your local network. Can also be set later from Admin Settings. |
-| `JELLYFIN_TAILSCALE_URL` | *(empty)* | Same idea, for when Sound Capsule is accessed over Tailscale (e.g. `http://100.x.x.x:8096`). Falls back to `JELLYFIN_PUBLIC_URL`, then the local address, if unset. |
+| `JELLYFIN_PUBLIC_URL` | *(empty)* | Your Jellyfin server's public domain (e.g. `https://jellyfin.example.com`), used only to build "Open in Jellyfin" links when Soundcheck is accessed from outside your local network. Can also be set later from Admin Settings. |
+| `JELLYFIN_TAILSCALE_URL` | *(empty)* | Same idea, for when Soundcheck is accessed over Tailscale (e.g. `http://100.x.x.x:8096`). Falls back to `JELLYFIN_PUBLIC_URL`, then the local address, if unset. |
 
-None of these affect how Sound Capsule talks to Jellyfin in the
+None of these affect how Soundcheck talks to Jellyfin in the
 background — that always uses the address given at the initial admin login.
 
 ## How tracking works
@@ -155,7 +155,7 @@ Jellyfin server
      │
      │ standard /Sessions API, polled every 5 seconds
      ▼
-Sound Capsule background tracker
+Soundcheck background tracker
      │
      ├── SQLite: open playback state
      │
@@ -178,10 +178,10 @@ listened time.
 - Your Jellyfin **password is never stored**, by anyone, ever.
 - The connecting administrator's Jellyfin **access token is encrypted**
   (AES-256-GCM) before being stored in SQLite, using a secret generated
-  once per install (`/data/.capsule-secret` inside the container, or set
-  it yourself via the `CAPSULE_SECRET` environment variable).
-- Everything Sound Capsule knows about your listening lives in one SQLite
-  database inside the `capsule-data` Docker volume — nothing is sent
+  once per install (`/data/.soundcheck-secret` inside the container, or set
+  it yourself via the `SOUNDCHECK_SECRET` environment variable).
+- Everything Soundcheck knows about your listening lives in one SQLite
+  database inside the `soundcheck-data` Docker volume — nothing is sent
   anywhere else.
 - Each login also gets its own Jellyfin device identity, so signing in
   from a second browser or network never invalidates a session you already

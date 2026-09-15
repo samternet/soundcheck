@@ -1,4 +1,4 @@
-# Contributing to Sound Capsule
+# Contributing to Soundcheck
 
 Thanks for taking the time to contribute. This project is a self-hosted,
 database-first Jellyfin companion — deliberately simple on the backend
@@ -20,7 +20,7 @@ You need a Jellyfin server to point at — either your own, or a test instance.
 docker compose up -d --build
 ```
 
-This builds both containers (`sound-capsule-api` and `sound-capsule`)
+This builds both containers (`soundcheck-api` and `soundcheck`)
 and serves the app at `http://localhost:7096`. For faster iteration on the
 frontend alone:
 

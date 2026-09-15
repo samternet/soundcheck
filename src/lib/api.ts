@@ -1,5 +1,5 @@
 /**
- * The single place that knows how to talk to the Sound Capsule API.
+ * The single place that knows how to talk to the Soundcheck API.
  *
  * Before this existed, all 24 call sites repeated the session header name, the
  * `r.json()` / `r.ok` dance and their own ad-hoc error handling, so a change to
@@ -8,7 +8,7 @@
  */
 
 /** Header carrying the web session id. Must match SESSION_HEADER in server/src/config.ts. */
-export const SESSION_HEADER = 'x-capsule-session'
+export const SESSION_HEADER = 'x-soundcheck-session'
 
 export const API_BASE = '/api'
 

@@ -78,7 +78,7 @@ export function SongDetailModal({
                 {item.artwork ? (
                   <img src={item.artwork} alt="" loading="eager" decoding="async" />
                 ) : (
-                  <div className="capsule-art-fallback branded">
+                  <div className="art-fallback branded">
                     <span>♪</span>
                   </div>
                 )}

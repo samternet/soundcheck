@@ -94,7 +94,7 @@ export function GenresPage({
     : 'Your sounds are still taking shape.'
   const heroSub = topGenre?.genre
     ? `${topShare}% of your listening came from ${topGenre.genre}, with ${formatNumber(Math.round(Number(topGenre.plays || 0)))} attributed plays across ${formatNumber(topGenre.unique_artists || 0)} artists.`
-    : 'Keep listening and Sound Capsule will start finding the sounds that define your year.'
+    : 'Keep listening and Soundcheck will start finding the sounds that define your year.'
   const discovery =
     topGenre && Number(data?.totals?.unique_artists || 0) > 0
       ? Math.min(

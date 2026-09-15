@@ -1,11 +1,11 @@
 # Settings live in `.env` (copy `.env.example` to get started) — see the
 # README's Configuration section. Values here only wire the containers together.
-name: sound-capsule
+name: soundcheck
 services:
   api:
     build:
       context: ./server
-    container_name: sound-capsule-api
+    container_name: soundcheck-api
     restart: unless-stopped
     environment:
       # Internal wiring, not settings: nginx reaches the API on port 4000 and
@@ -17,13 +17,13 @@ services:
       JELLYFIN_PUBLIC_URL: ${JELLYFIN_PUBLIC_URL:-}
       JELLYFIN_TAILSCALE_URL: ${JELLYFIN_TAILSCALE_URL:-}
     volumes:
-      - capsule-data:/data
+      - soundcheck-data:/data
 
-  sound-capsule:
+  soundcheck:
     build: .
-    container_name: sound-capsule
+    container_name: soundcheck
     ports:
-      - '${SOUND_CAPSULE_PORT:-7096}:80'
+      - '${SOUNDCHECK_PORT:-7096}:80'
     depends_on:
       - api
     environment:
@@ -31,5 +31,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  capsule-data:
-    name: sound-capsule_capsule-data
+  soundcheck-data:
+    name: soundcheck_data

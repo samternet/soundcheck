@@ -2,7 +2,7 @@
  * The product's name and tagline. index.html's <title> and the README repeat
  * the tagline as plain text, so update those alongside this.
  */
-export const APP_NAME = 'Sound Capsule'
+export const APP_NAME = 'Soundcheck'
 export const APP_TAGLINE = 'Your music taste, quantified'
 
 /**

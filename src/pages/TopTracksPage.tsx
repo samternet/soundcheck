@@ -204,7 +204,7 @@ export function TopTracksPage({
                     {artwork ? (
                       <img src={artwork} alt="" loading="lazy" decoding="async" />
                     ) : (
-                      <div className="capsule-art-fallback branded">
+                      <div className="art-fallback branded">
                         <span>
                           {i === 0 ? '♬' : i === 1 ? '◒' : i === 2 ? '♫' : i === 3 ? '◌' : '♪'}
                         </span>
@@ -304,7 +304,7 @@ export function TopTracksPage({
                     {artwork ? (
                       <img src={artwork} alt="" loading="lazy" decoding="async" />
                     ) : (
-                      <div className="capsule-art-fallback branded">
+                      <div className="art-fallback branded">
                         <span>♪</span>
                       </div>
                     )}
@@ -361,7 +361,7 @@ export function TopTracksPage({
                           {artwork ? (
                             <img src={artwork} alt="" loading="lazy" decoding="async" />
                           ) : (
-                            <div className="capsule-art-fallback">
+                            <div className="art-fallback">
                               <span>♪</span>
                             </div>
                           )}
@@ -405,7 +405,7 @@ export function TopTracksPage({
                           {artwork ? (
                             <img src={artwork} alt="" loading="lazy" decoding="async" />
                           ) : (
-                            <div className="capsule-art-fallback">
+                            <div className="art-fallback">
                               <span>♪</span>
                             </div>
                           )}
@@ -456,7 +456,7 @@ export function TopTracksPage({
                       {artwork ? (
                         <img src={artwork} alt="" loading="lazy" decoding="async" />
                       ) : (
-                        <div className="capsule-art-fallback">
+                        <div className="art-fallback">
                           <span>♪</span>
                         </div>
                       )}
@@ -519,7 +519,7 @@ export function TopTracksPage({
                           {artwork ? (
                             <img src={artwork} alt="" loading="lazy" decoding="async" />
                           ) : (
-                            <div className="capsule-art-fallback">
+                            <div className="art-fallback">
                               <span>♪</span>
                             </div>
                           )}
@@ -625,7 +625,7 @@ export function TopTracksPage({
                         {artwork ? (
                           <img src={artwork} alt="" loading="lazy" decoding="async" />
                         ) : (
-                          <div className="capsule-art-fallback">
+                          <div className="art-fallback">
                             <span>♪</span>
                           </div>
                         )}
@@ -736,7 +736,7 @@ export function TopTracksPage({
                     {artwork ? (
                       <img src={artwork} alt="" loading="lazy" decoding="async" />
                     ) : (
-                      <div className="capsule-art-fallback">
+                      <div className="art-fallback">
                         <span>♪</span>
                       </div>
                     )}

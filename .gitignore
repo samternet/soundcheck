@@ -17,7 +17,7 @@ server/data/
 *.db-journal
 *.db-wal
 *.db-shm
-.capsule-secret
+.soundcheck-secret
 
 # Env files
 .env

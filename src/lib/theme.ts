@@ -1,6 +1,6 @@
 export type Theme = 'light' | 'dark'
 
-const KEY = 'capsule-theme'
+const KEY = 'soundcheck-theme'
 
 // Kept in sync with --surface-page in styles.css, so the browser chrome on mobile
 // matches the app ground instead of flashing the wrong colour behind it.

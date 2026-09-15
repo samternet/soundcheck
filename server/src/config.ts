@@ -11,8 +11,8 @@ const require = createRequire(import.meta.url)
 // (dist/config.js), so there is nothing left to keep in sync by hand.
 const pkg = require('../package.json') as { name: string; version: string }
 
-export const APP_NAME = 'Sound Capsule'
-export const SERVICE_NAME = 'sound-capsule-api'
+export const APP_NAME = 'Soundcheck'
+export const SERVICE_NAME = 'soundcheck-api'
 export const VERSION: string = pkg.version
 
 export const PORT = Number(process.env.PORT || 4000)
@@ -20,20 +20,20 @@ export const HOST = '0.0.0.0'
 
 /** Writable volume holding the SQLite database, the encryption secret and the artwork cache. */
 export const DATA_DIR = process.env.DATA_DIR || '/data'
-export const DATABASE_FILE = path.join(DATA_DIR, 'capsule.db')
-export const SECRET_FILE = path.join(DATA_DIR, '.capsule-secret')
+export const DATABASE_FILE = path.join(DATA_DIR, 'soundcheck.db')
+export const SECRET_FILE = path.join(DATA_DIR, '.soundcheck-secret')
 export const ARTWORK_CACHE_DIR = path.join(DATA_DIR, 'artwork-cache')
 
-/** Name of the header (and matching cookie) carrying a Sound Capsule web session. */
-export const SESSION_HEADER = 'x-capsule-session'
-export const SESSION_COOKIE = 'capsule_session'
+/** Name of the header (and matching cookie) carrying a Soundcheck web session. */
+export const SESSION_HEADER = 'x-soundcheck-session'
+export const SESSION_COOKIE = 'soundcheck_session'
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
 /** Every outbound Jellyfin call is bounded so one unresponsive server cannot stall a request. */
 export const JELLYFIN_TIMEOUT_MS = 10_000
 
 /**
- * Jellyfin identifies each client by DeviceId. Sound Capsule issues a unique one
+ * Jellyfin identifies each client by DeviceId. Soundcheck issues a unique one
  * per login so a second sign-in never invalidates the token an already-open tab
  * is using; these prefixes only make the rows readable in Jellyfin's device list.
  */

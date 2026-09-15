@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented here, newest first.
 
+## v0.9.0 — Renamed to Soundcheck
+
+The project formerly known as Sound Capsule is now **Soundcheck**. Spotify
+runs a feature of its own called "Your Sound Capsule" — a personal listening
+recap, the same kind of thing this project does — so the name changed to
+avoid the overlap. Nothing else about the project changes: same features,
+same license, same maintainer.
+
+### Changed
+
+- Renamed the project, repository, Docker containers/volume, session
+  cookie/header, database file, and encryption-secret file from
+  `sound-capsule`/`capsule` to `soundcheck`. A fresh `.env` var name,
+  `SOUNDCHECK_PORT`, replaces `SOUND_CAPSULE_PORT`.
+- The GitHub repository moved to
+  [github.com/samternet/soundcheck](https://github.com/samternet/soundcheck);
+  the old URL redirects automatically.
+
+### Upgrading
+
+- This is a rename, not a data migration: update your `.env`'s
+  `SOUND_CAPSULE_PORT` to `SOUNDCHECK_PORT` (same value), update your git
+  remote if you cloned the repo (`git remote set-url origin
+  https://github.com/samternet/soundcheck.git`), then `docker compose up -d
+  --build`. If you'd set `CAPSULE_SECRET` directly instead of letting it
+  generate one, rename it to `SOUNDCHECK_SECRET`.
+
 ## v0.8.0 — First public beta
 
 Sound Capsule leaves alpha and is released publicly as a beta. This release closes the security issues found in a

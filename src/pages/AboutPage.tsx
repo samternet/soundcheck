@@ -109,7 +109,7 @@ export function AboutPage({ session, me }: { session: Session; me: Me | null }) 
 
   async function copyDetails() {
     const text = [
-      `Sound Capsule v${APP_VERSION}`,
+      `Soundcheck v${APP_VERSION}`,
       `Jellyfin: ${serverLabel}`,
       `Timezone: ${timezone}`,
       `Browser: ${navigator.userAgent}`,
@@ -128,7 +128,7 @@ export function AboutPage({ session, me }: { session: Session; me: Me | null }) 
     <div className="about-page">
       <div className="page-intro genre-page-intro">
         <span className="eyebrow">
-          <Info size={14} /> ABOUT SOUND CAPSULE
+          <Info size={14} /> ABOUT SOUNDCHECK
         </span>
         <h1>Your music, remembered.</h1>
         <p>A year in review for the music you host yourself.</p>
@@ -140,9 +140,8 @@ export function AboutPage({ session, me }: { session: Session; me: Me | null }) 
           <div className="eyebrow">♪ {APP_TAGLINE.toUpperCase()}</div>
           <h1>Built for people who host their own music.</h1>
           <p>
-            Sound Capsule quietly follows what you play on Jellyfin and turns it into your top
-            tracks, artists, albums, genres and listening habits, without sending any of it anywhere
-            else.
+            Soundcheck quietly follows what you play on Jellyfin and turns it into your top tracks,
+            artists, albums, genres and listening habits, without sending any of it anywhere else.
           </p>
           <a className="about-hero-button" href={LINKS.repository} {...externalLinkProps}>
             <Code size={15} /> View the code
@@ -162,10 +161,10 @@ export function AboutPage({ session, me }: { session: Session; me: Me | null }) 
           <span className="eyebrow">
             <Heart size={13} /> SUPPORT THE PROJECT
           </span>
-          <h2>Enjoying your Capsule?</h2>
+          <h2>Enjoying your Soundcheck?</h2>
           <p>
-            Sound Capsule is free and built in spare time by one person. If it gave you a fun look
-            at your own taste, a coffee helps keep the updates coming.
+            Soundcheck is free and built in spare time by one person. If it gave you a fun look at
+            your own taste, a coffee helps keep the updates coming.
           </p>
           <div className="about-support-actions">
             {/* A plain link, not Buy Me a Coffee's embed script: loading their widget

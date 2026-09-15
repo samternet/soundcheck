@@ -110,7 +110,7 @@ export function getTopArtistsNarrative(year: number, trackingStartedAt: number, 
   return `Five artists stood above the rest of your listening in ${year}.`
 }
 
-export function buildCapsuleInsights(data: Dashboard | null) {
+export function buildListeningInsights(data: Dashboard | null) {
   if (!data?.totals?.plays)
     return [
       'Your listening story is just getting started. The next song could become part of your 2026.',
@@ -375,7 +375,7 @@ export function listeningPersonality(input: PersonalityInput): Personality {
                 ? `So far that is ${formatNumber(input.uniqueTracks)} songs from ${formatNumber(input.uniqueArtists)} artists.`
                 : `You stay close to ${formatNumber(input.uniqueArtists)} artists rather than casting around.`
 
-  // Same candidate-pool-and-rotate shape as buildCapsuleInsights: only lines the
+  // Same candidate-pool-and-rotate shape as buildListeningInsights: only lines the
   // data can actually support are offered, and the starting point moves as the
   // numbers move so the card does not read identically forever.
   const evidence: string[] = []

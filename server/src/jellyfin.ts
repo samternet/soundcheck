@@ -46,20 +46,20 @@ export function normalizeUrl(value: string) {
   return url
 }
 
-// Every Sound Capsule login used to send the exact same DeviceId to Jellyfin, so a
+// Every Soundcheck login used to send the exact same DeviceId to Jellyfin, so a
 // second login (a different browser, or the same user from another network) looked
 // to Jellyfin like the *same* device re-authenticating — which could invalidate the
-// access token an already-open Sound Capsule tab was still relying on. Callers now
+// access token an already-open Soundcheck tab was still relying on. Callers now
 // pass a per-connection/per-session deviceId (see db.ts's connections.device_id and
 // web_sessions.device_id); the constant below is only a last-resort fallback for any
 // call site that doesn't have one yet, so this stays backward-compatible.
-const FALLBACK_DEVICE_ID = 'sound-capsule'
+const FALLBACK_DEVICE_ID = 'soundcheck'
 
 /** Strips the characters that would break out of a quoted MediaBrowser header field. */
 const headerValue = (value: string) => value.replace(/["\\,\r\n]/g, '')
 
 /**
- * Identifies Sound Capsule to Jellyfin using the standard `Authorization` header.
+ * Identifies Soundcheck to Jellyfin using the standard `Authorization` header.
  *
  * Client details used to travel in `X-Emby-Authorization`, with the token in a
  * separate bare `Authorization: MediaBrowser Token="…"`. Newer Jellyfin releases

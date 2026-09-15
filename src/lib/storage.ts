@@ -1,17 +1,17 @@
 /**
  * Every browser-storage key the app uses, in one place. They were previously
  * inline string literals in some modules and named constants in others, which
- * made it impossible to see what Sound Capsule persists without grepping.
+ * made it impossible to see what Soundcheck persists without grepping.
  */
 export const STORAGE_KEYS = {
   /** localStorage — the signed-in session, so a reload stays logged in. */
-  session: 'capsule-session',
+  session: 'soundcheck-session',
   /** localStorage — 'light' | 'dark' | 'system'. */
-  theme: 'capsule-theme',
+  theme: 'soundcheck-theme',
   /** localStorage — set once the one-time unlock easter egg has been shown. */
-  easterEggSeen: 'capsule-seen-nggyu',
-  /** sessionStorage — which capsule insight was shown last, to rotate on revisit. */
-  lastInsight: 'capsule-last-insight',
+  easterEggSeen: 'soundcheck-seen-nggyu',
+  /** sessionStorage — which insight was shown last, to rotate on revisit. */
+  lastInsight: 'soundcheck-last-insight',
 } as const
 
 /**

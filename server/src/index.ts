@@ -12,7 +12,7 @@ import db, {
   updateConnectionUrls,
   stats,
   ensureTrackingStart,
-  capsuleMeta,
+  trackingMeta,
   setUnlockOverride,
   saveWebSession,
   deleteWebSession,
@@ -90,7 +90,7 @@ app.set('trust proxy', 'loopback, linklocal, uniquelocal')
 
 /**
  * Failed sign-ins allowed per client address within the window before further
- * attempts are refused. Stops password guessing through Sound Capsule, and
+ * attempts are refused. Stops password guessing through Soundcheck, and
  * stops it from getting your users locked out by Jellyfin's own lockout.
  */
 const LOGIN_MAX_FAILURES = 10
@@ -677,7 +677,7 @@ app.get('/api/song/:itemId', async (req, res) => {
   let favorite = false
   try {
     // Favorites are per-user in Jellyfin. Always read them with the token for
-    // the currently logged-in Sound Capsule user; the stored connection token is
+    // the currently logged-in Soundcheck user; the stored connection token is
     // the administrator/tracker token and may represent a different user.
     const userData = await getItemUserData(
       userAuth.connection.server_url,
@@ -885,7 +885,7 @@ app.get('/api/health', (_req, res) =>
     ok: true,
     service: SERVICE_NAME,
     version: VERSION,
-    mode: 'database-capsule',
+    mode: 'database',
   }),
 )
 
@@ -933,11 +933,11 @@ app.post('/api/auth/login', async (req, res) => {
     if (!serverId) throw new Error('Jellyfin did not return a server ID')
     // Belt and braces for the rule above: if the linked address now answers as a
     // different Jellyfin server (a reused IP or hostname), refuse rather than
-    // quietly re-linking Sound Capsule to it.
+    // quietly re-linking Soundcheck to it.
     if (linked && String(linked.server_id) !== serverId) {
       return res.status(403).json({
         error:
-          'The Jellyfin server at the linked address has changed. Sound Capsule will not connect to a different server.',
+          'The Jellyfin server at the linked address has changed. Soundcheck will not connect to a different server.',
       })
     }
     const isAdministrator = Boolean(a.user.Policy?.IsAdministrator)
@@ -964,11 +964,11 @@ app.post('/api/auth/login', async (req, res) => {
     } else if (!connection) {
       return res.status(403).json({
         error:
-          'A Jellyfin administrator must connect this server to Sound Capsule once before other users can access their Capsule.',
+          'A Jellyfin administrator must connect this server to Soundcheck once before other users can access their Soundcheck.',
       })
     }
 
-    if (!connection) throw new Error('Unable to initialize the Sound Capsule server connection')
+    if (!connection) throw new Error('Unable to initialize the Soundcheck server connection')
     ensureTrackingStart(String(a.user.Id))
     const sessionId = createSession(
       connection.id,
@@ -1082,12 +1082,12 @@ app.get('/api/dashboard', (req, res) => {
   const uc = userConnection(req)
   if (!uc) return unauthorized(res)
   const year = parseYear(req.query.year)
-  res.json({ ...stats(uc.session.userId, year), ...capsuleMeta(uc.session.userId) })
+  res.json({ ...stats(uc.session.userId, year), ...trackingMeta(uc.session.userId) })
 })
-app.get('/api/capsule/meta', (req, res) => {
+app.get('/api/meta', (req, res) => {
   const uc = userConnection(req)
   if (!uc) return unauthorized(res)
-  res.json(capsuleMeta(uc.session.userId))
+  res.json(trackingMeta(uc.session.userId))
 })
 
 // Admin-only, and scoped to the calling admin's own account only — forces
@@ -1096,7 +1096,7 @@ app.post('/api/settings/unlock-override', (req, res) => {
   const uc = requireAdmin(req, res)
   if (!uc) return
   setUnlockOverride(uc.session.userId, Boolean(req.body?.enabled))
-  res.json(capsuleMeta(uc.session.userId))
+  res.json(trackingMeta(uc.session.userId))
 })
 app.get('/api/status', (req, res) => {
   const uc = userConnection(req)
@@ -1139,4 +1139,4 @@ app.post('/api/sync/now', async (req, res) => {
 })
 
 startTracker()
-app.listen(PORT, HOST, () => console.log(`Sound Capsule API listening on :${PORT}`))
+app.listen(PORT, HOST, () => console.log(`Soundcheck API listening on :${PORT}`))

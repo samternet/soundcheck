@@ -60,7 +60,7 @@ export function Login({ onLogin }: { onLogin: (s: Session) => void }) {
           <span className="brand-mark">
             <LogoIcon size={19} strokeWidth={2.4} />
           </span>
-          <strong>Sound Capsule</strong>
+          <strong>Soundcheck</strong>
           <small>{APP_TAGLINE}</small>
         </div>
         <div className="login-illustration">
@@ -70,7 +70,7 @@ export function Login({ onLogin }: { onLogin: (s: Session) => void }) {
         <form onSubmit={submit}>
           <div className="login-heading">
             <span>Your music</span>
-            <h1>Capsuled.</h1>
+            <h1>Checked.</h1>
             <p>
               Sign in with your Jellyfin account and turn your listening history into a beautiful
               year-in-review.
@@ -121,7 +121,7 @@ export function Login({ onLogin }: { onLogin: (s: Session) => void }) {
           </label>
           {error && <div className="login-error">{error}</div>}
           <button type="submit" className="login-button" disabled={loading}>
-            {loading ? 'Connecting…' : 'Enter my Capsule'} <ChevronRight size={17} />
+            {loading ? 'Connecting…' : 'Enter my Soundcheck'} <ChevronRight size={17} />
           </button>
           <small className="login-note">
             Passwords are never stored. Only the encrypted Jellyfin access token is kept locally.

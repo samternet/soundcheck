@@ -9,7 +9,7 @@ export function Brand({ desktop = false }: { desktop?: boolean }) {
         <LogoIcon size={18} strokeWidth={2.4} />
       </span>
       <span>
-        Sound <b>Capsule</b>
+        Sound<b>check</b>
       </span>
     </div>
   )
