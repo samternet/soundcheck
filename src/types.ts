@@ -122,6 +122,16 @@ export type Dashboard = {
   genreAttributedPlays?: number
   monthly: any[]
   hourly: any[]
+  todayHourly: { hour: number; listened_ms: number; plays: number }[]
+  todayHourlySongs?: {
+    hour: number
+    item_id: string
+    track_title: string
+    album_name: string
+    artist_name: string
+    plays: number
+    listened_ms: number
+  }[]
   devices: any[]
   discoveredArtists: number
   weekday?: { dow: number; plays: number; listened_ms: number }[]

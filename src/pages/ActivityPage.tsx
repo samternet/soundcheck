@@ -20,6 +20,7 @@ import { listeningRhythmArchetype } from '../lib/narrative'
 import { Card, CardHeader, Empty, MetricCard, Stat, Locked } from '../components/ui/primitives'
 import { ActivityRadar } from '../components/charts/ActivityRadar'
 import { HourlyPolarChart } from '../components/charts/HourlyPolarChart'
+import { HourSongsModal } from '../components/modals/HourSongsModal'
 import { getUnlocks } from '../lib/unlock'
 import { weekLockedCopy, heatmapLockedCopy, pickCopy } from '../lib/unlockCopy'
 
@@ -50,10 +51,40 @@ export function ActivityPage({
     [data],
   )
   const peakHour = hourly.indexOf(Math.max(...hourly))
-  const peakHourPlays = hourlyPlaysByHour[peakHour] || 0
   const peakHourLabel = `${peakHour % 12 === 0 ? 12 : peakHour % 12}:00 ${peakHour < 12 ? 'AM' : 'PM'}`
   const peakHourEnd = (peakHour + 1) % 24
   const peakHourEndLabel = `${peakHourEnd % 12 === 0 ? 12 : peakHourEnd % 12}:00 ${peakHourEnd < 12 ? 'AM' : 'PM'}`
+
+  // The Listening Clock card can show either the whole selected year's pattern
+  // (the default, consistent with the rest of this page) or just today — but
+  // "today" only makes sense while viewing the current year's dashboard.
+  const isCurrentYear = year === new Date().getFullYear()
+  const [clockView, setClockView] = useState<'year' | 'today'>('year')
+  const todayHourlyPlays = useMemo(
+    () =>
+      Array.from({ length: 24 }, (_, i) =>
+        Number((data?.todayHourly || []).find(x => Number(x.hour) === i)?.plays || 0),
+      ),
+    [data],
+  )
+  const showingToday = clockView === 'today' && isCurrentYear
+  // The clock's wedges are sized by play count, not listening time: an hour can
+  // hold at most 60 real minutes, so heavily-listened hours all cap out near that
+  // ceiling and look the same length regardless of how many tracks filled them.
+  const clockHourlyPlays = showingToday ? todayHourlyPlays : hourlyPlaysByHour
+  const clockPeakHour = clockHourlyPlays.indexOf(Math.max(...clockHourlyPlays))
+  const clockPeakHourPlays = clockHourlyPlays[clockPeakHour] || 0
+  const clockPeakHourAvgPlays =
+    !showingToday && Number(data?.derived?.listening_days || 0) > 0
+      ? clockPeakHourPlays / Number(data?.derived?.listening_days || 0)
+      : clockPeakHourPlays
+  const clockPeakHourLabel = `${clockPeakHour % 12 === 0 ? 12 : clockPeakHour % 12}:00 ${clockPeakHour < 12 ? 'AM' : 'PM'}`
+
+  const [selectedHour, setSelectedHour] = useState<number | null>(null)
+  const selectedHourSongs = useMemo(
+    () => (data?.todayHourlySongs || []).filter(s => Number(s.hour) === selectedHour),
+    [data, selectedHour],
+  )
 
   const weekday = useMemo(
     () =>
@@ -216,6 +247,7 @@ export function ActivityPage({
   }
 
   return (
+    <>
     <div className="activity-page">
       <div className="page-intro genre-page-intro">
         <span className="eyebrow">
@@ -278,20 +310,47 @@ export function ActivityPage({
 
       <section className="genre-grid activity-primary-grid">
         <Card className="activity-radar-card">
-          <CardHeader title="Your Listening Clock" />
-          <p className="genre-section-subtitle">When during the day you tend to listen.</p>
-          <HourlyPolarChart values={hourly} color="#e2916a" />
-          {Math.max(...hourly) > 0 && (
+          <div className="activity-clock-header">
+            <CardHeader title="Your Listening Clock" />
+            {isCurrentYear && (
+              <div className="activity-clock-toggle" data-active={clockView}>
+                <span className="activity-clock-toggle-thumb" />
+                <button
+                  className={clockView === 'year' ? 'is-active' : ''}
+                  onClick={() => setClockView('year')}
+                >
+                  This Year
+                </button>
+                <button
+                  className={clockView === 'today' ? 'is-active' : ''}
+                  onClick={() => setClockView('today')}
+                >
+                  Today
+                </button>
+              </div>
+            )}
+          </div>
+          <p className="genre-section-subtitle">
+            {showingToday ? "When you've listened today." : 'When during the day you tend to listen.'}
+          </p>
+          <HourlyPolarChart
+            values={clockHourlyPlays}
+            color="#e2916a"
+            onHourClick={showingToday ? setSelectedHour : undefined}
+          />
+          {Math.max(...clockHourlyPlays) > 0 ? (
             <div className="activity-clock-stats">
               <div>
                 <span>Busiest hour</span>
-                <strong>{peakHourLabel}</strong>
+                <strong>{clockPeakHourLabel}</strong>
               </div>
               <div>
-                <span>Plays in busiest hour</span>
-                <strong>{formatNumber(peakHourPlays)} plays</strong>
+                <span>{showingToday ? 'Plays in busiest hour' : 'Avg. plays in busiest hour'}</span>
+                <strong>{formatNumber(Math.round(clockPeakHourAvgPlays))} plays</strong>
               </div>
             </div>
+          ) : (
+            showingToday && <Empty text="Nothing played yet today." />
           )}
         </Card>
         <Card className="activity-radar-card">
@@ -483,5 +542,15 @@ export function ActivityPage({
         )}
       </Card>
     </div>
+    {selectedHour !== null && (
+      <HourSongsModal
+        hour={selectedHour}
+        songs={selectedHourSongs}
+        media={media}
+        onClose={() => setSelectedHour(null)}
+        onSongClick={onSongClick}
+      />
+    )}
+    </>
   )
 }

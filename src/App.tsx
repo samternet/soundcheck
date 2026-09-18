@@ -77,6 +77,35 @@ const DASHBOARD_POLL_MS = 30_000
 /** How often the Jellyfin connection indicator is re-checked. */
 const CONNECTION_POLL_MS = 15_000
 
+/**
+ * Title/artist for every song id the dashboard payload mentions. Lets a song
+ * lookup that 404s (a stale id after Jellyfin reassigns one on a library
+ * rescan) fall back to an exact name search — see endpoints.song's
+ * title/artist params and the server-side fallback in GET /api/song/:itemId
+ * and POST /api/media/batch.
+ */
+function buildSongMetaById(data: Dashboard | null) {
+  const map = new Map<string, { title: string; artist: string }>()
+  const add = (itemId: unknown, title: unknown, artist: unknown) => {
+    const id = String(itemId || '')
+    if (id && !map.has(id))
+      map.set(id, { title: String(title || ''), artist: String(artist || '') })
+  }
+  for (const s of data?.recentSongs || []) add(s.item_id, s.track_title, s.artist_name)
+  for (const s of data?.todayHourlySongs || []) add(s.item_id, s.track_title, s.artist_name)
+  for (const s of data?.topSongs || []) add(s.item_id, s.track_title, s.artist_name)
+  for (const s of data?.monthlyTopSongs || []) if (s) add(s.item_id, s.track_title, s.artist_name)
+  for (const s of data?.neverSkippedSongs || []) add(s.item_id, s.track_title, s.artist_name)
+  for (const s of data?.mostSkippedSongs || []) add(s.item_id, s.track_title, s.artist_name)
+  for (const s of data?.repeatStreaks || []) add(s.item_id, s.track_title, s.artist_name)
+  for (const s of data?.trendingSongs || []) add(s.item_id, s.track_title, s.artist_name)
+  for (const g of data?.genreStats || [])
+    if (g.topTrack) add(g.topTrack.item_id, g.topTrack.track_title, g.topTrack.artist_name)
+  for (const a of data?.topArtists || [])
+    if (a.favoriteTrack) add(a.favoriteTrack.item_id, a.favoriteTrack.title, a.artist_name)
+  return map
+}
+
 export function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [booting, setBooting] = useState(true)
@@ -178,6 +207,11 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
   const [songDetail, setSongDetail] = useState<SongDetail | null>(null)
   const [songDetailLoading, setSongDetailLoading] = useState(false)
   const [songDetailError, setSongDetailError] = useState('')
+  // The id play_events actually recorded, kept separate from songDetail.item.id
+  // because the latter can be a *resolved* current Jellyfin id (see the
+  // fallback in GET /api/song/:itemId) — refreshing must keep querying by the
+  // originally requested id, or a resolved song's stats would look up nothing.
+  const songDetailRequestedId = useRef('')
   const [favoriteSaving, setFavoriteSaving] = useState(false)
   const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set())
   const [artistDetail, setArtistDetail] = useState<ArtistDetail | null>(null)
@@ -263,11 +297,12 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
   }
   async function openSongDetails(itemId: string) {
     if (!itemId) return
+    songDetailRequestedId.current = itemId
     setSongDetail(null)
     setSongDetailError('')
     setSongDetailLoading(true)
     try {
-      const d = await api.get<SongDetail>(endpoints.song(itemId, year), {
+      const d = await api.get<SongDetail>(endpoints.song(itemId, year, songMetaById.get(itemId)), {
         sessionId: session.sessionId,
         noStore: true,
       })
@@ -282,11 +317,15 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
   async function refreshSongDetail(itemId: string) {
     if (!itemId) return
     try {
-      const d = await api.get<SongDetail>(endpoints.song(itemId, year), {
+      const d = await api.get<SongDetail>(endpoints.song(itemId, year, songMetaById.get(itemId)), {
         sessionId: session.sessionId,
         noStore: true,
       })
-      setSongDetail(prev => (prev && prev.item.id === itemId ? d : prev))
+      // Compare against the requested id, not prev.item.id — a resolved
+      // (fallback-matched) song's item.id differs from the id it was
+      // requested under, so that comparison would never match and this
+      // refresh would silently be discarded every time.
+      setSongDetail(prev => (prev && songDetailRequestedId.current === itemId ? d : prev))
     } catch {
       /* a background refresh failing leaves the open modal as it was */
     }
@@ -461,27 +500,40 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
     let cancelled = false
     const loadMedia = async () => {
       try {
+        // De-duplicated before anything else: the server caps a single batch at
+        // MAX_BATCH_ITEM_IDS ids, and a repeated id (the same song shows up in
+        // topSongs, recentSongs, neverSkipped, ...) would otherwise burn that
+        // budget several times over and starve later sections of a slot.
         const wantedItemIds = [
-          ...(data.recentSongs || []).map((x: any) => x.item_id),
-          ...(data.genreStats || [])
-            .slice(0, 5)
-            .flatMap((g: any) => (g.topTrack?.item_id ? [g.topTrack.item_id] : [])),
-          ...(data.topSongs || []).slice(0, 50).map((x: any) => x.item_id),
-          ...(data.monthlyTopSongs || []).flatMap((x: any) => (x?.item_id ? [x.item_id] : [])),
-          ...(data.neverSkippedSongs || []).map((x: any) => x.item_id),
-          ...(data.mostSkippedSongs || []).map((x: any) => x.item_id),
-          ...(data.repeatStreaks || []).map((x: any) => x.item_id),
-          ...(data.trendingSongs || []).map((x: any) => x.item_id),
-          ...(data.topArtists || [])
-            .slice(0, 20)
-            .flatMap((x: any) => (x.favoriteTrack?.item_id ? [x.favoriteTrack.item_id] : [])),
-        ].filter(Boolean)
+          ...new Set(
+            [
+              ...(data.recentSongs || []).map((x: any) => x.item_id),
+              ...(data.todayHourlySongs || []).map((x: any) => x.item_id),
+              ...(data.genreStats || [])
+                .slice(0, 5)
+                .flatMap((g: any) => (g.topTrack?.item_id ? [g.topTrack.item_id] : [])),
+              ...(data.topSongs || []).slice(0, 50).map((x: any) => x.item_id),
+              ...(data.monthlyTopSongs || []).flatMap((x: any) => (x?.item_id ? [x.item_id] : [])),
+              ...(data.neverSkippedSongs || []).map((x: any) => x.item_id),
+              ...(data.mostSkippedSongs || []).map((x: any) => x.item_id),
+              ...(data.repeatStreaks || []).map((x: any) => x.item_id),
+              ...(data.trendingSongs || []).map((x: any) => x.item_id),
+              ...(data.topArtists || [])
+                .slice(0, 20)
+                .flatMap((x: any) => (x.favoriteTrack?.item_id ? [x.favoriteTrack.item_id] : [])),
+            ].filter(Boolean),
+          ),
+        ]
         const wantedArtists = [
-          ...(data.topArtists || []).slice(0, 20).map((x: any) => x.artist_name),
-          ...(data.genreStats || [])
-            .slice(0, 5)
-            .flatMap((g: any) => (g.topArtist?.artist_name ? [g.topArtist.artist_name] : [])),
-        ].filter(Boolean)
+          ...new Set(
+            [
+              ...(data.topArtists || []).slice(0, 20).map((x: any) => x.artist_name),
+              ...(data.genreStats || [])
+                .slice(0, 5)
+                .flatMap((g: any) => (g.topArtist?.artist_name ? [g.topArtist.artist_name] : [])),
+            ].filter(Boolean),
+          ),
+        ]
         const wantedAlbums = (data.topAlbums || [])
           .slice(0, 20)
           .map((x: any) => ({
@@ -499,16 +551,33 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
         const albums = wantedAlbums.filter((a: any) => !seen.has(`album:${a.name}::${a.artist}`))
         if (!itemIds.length && !artistNames.length && !albums.length) return
 
+        // Title/artist per id, so the server can fall back to a name search for
+        // any id it no longer recognizes (see /api/media/batch and the matching
+        // fallback in GET /api/song/:itemId).
+        const songMeta = buildSongMetaById(data)
+        const items = itemIds.map((id: string) => ({ id, ...songMeta.get(id) }))
+
         const result = await api.post<{
           items?: Record<string, MediaInfo>
           artists?: Record<string, MediaInfo>
           albums?: Record<string, MediaInfo>
-        }>(endpoints.mediaBatch, { itemIds, artistNames, albums }, { sessionId: session.sessionId })
+        }>(endpoints.mediaBatch, { items, artistNames, albums }, { sessionId: session.sessionId })
         if (cancelled) return
-        // Only mark as fetched once the response is in, so a failed request retries.
-        itemIds.forEach((id: string) => seen.add('item:' + id))
-        artistNames.forEach((n: string) => seen.add('artist:' + n))
-        albums.forEach((a: any) => seen.add(`album:${a.name}::${a.artist}`))
+        // Only mark an id as fetched once the server actually answered for it —
+        // not just because it was in the request. The batch endpoint silently
+        // truncates to MAX_BATCH_ITEM_IDS/MAX_BATCH_NAMES; marking every
+        // requested id as "seen" regardless would permanently blacklist
+        // whatever got truncated out, instead of letting the next poll retry it.
+        itemIds.forEach((id: string) => {
+          if (result.items?.[`item:${id}`]) seen.add('item:' + id)
+        })
+        artistNames.forEach((n: string) => {
+          if (result.artists?.[`artist:${n}`]) seen.add('artist:' + n)
+        })
+        albums.forEach((a: any) => {
+          const key = `album:${a.name}::${a.artist}`
+          if (result.albums?.[key]) seen.add(key)
+        })
         setMedia(prev => ({
           ...prev,
           ...result.items,
@@ -522,6 +591,8 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
       cancelled = true
     }
   }, [data, session.sessionId])
+
+  const songMetaById = useMemo(() => buildSongMetaById(data), [data])
 
   const totals = data?.totals
   const minutes = Math.round((totals?.listened_ms || 0) / 60000)
@@ -1503,7 +1574,7 @@ export function DashboardPage({ session, onLogout }: { session: Session; onLogou
           }}
           onFavorite={toggleSongFavorite}
           favoriteSaving={favoriteSaving}
-          onRefresh={() => songDetail && refreshSongDetail(songDetail.item.id)}
+          onRefresh={() => songDetail && refreshSongDetail(songDetailRequestedId.current)}
         />
       )}
       {(artistDetailLoading || artistDetailError || artistDetail) && (

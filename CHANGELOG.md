@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here, newest first.
 
+## v0.9.1
+
+### Added
+
+- Today/Year toggle on the Listening Clock; click an hour to see what you
+  played then.
+
+### Fixed
+
+- Songs could permanently lose their artwork after a heavy listening
+  session (an unbounded artwork batch request).
+- Some songs failed to open with "Jellyfin item not found" after a library
+  rescan reassigned their id; lookups now fall back to a title/artist match.
+
+### Security
+
+- Hardened per-user query scoping to only accept session-authenticated ids.
+
 ## v0.9.0 — Renamed to Soundcheck
 
 The project formerly known as Sound Capsule is now **Soundcheck**. Spotify

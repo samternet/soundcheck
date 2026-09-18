@@ -1,6 +1,14 @@
 import React from 'react'
 
-export function HourlyPolarChart({ values, color }: { values: number[]; color: string }) {
+export function HourlyPolarChart({
+  values,
+  color,
+  onHourClick,
+}: {
+  values: number[]
+  color: string
+  onHourClick?: (hour: number) => void
+}) {
   const n = values.length
   // outerMaxR leaves a wide margin to the viewBox edge (rather than crowding it) so
   // the hour labels — "6 AM"/"6 PM" reach farthest, being anchored start/end — always
@@ -57,6 +65,28 @@ export function HourlyPolarChart({ values, color }: { values: number[]; color: s
         const r = innerR + (outerMaxR - innerR) * (v / max)
         return <path key={`fg${i}`} d={wedgePath(innerR, r, startA, endA)} fill={color} />
       })}
+      {onHourClick &&
+        values.map((_, i) => {
+          const startA = i * stepDeg + gapDeg / 2,
+            endA = (i + 1) * stepDeg - gapDeg / 2
+          return (
+            <path
+              key={`hit${i}`}
+              d={wedgePath(innerR, outerMaxR, startA, endA)}
+              className="chart-wedge-hit"
+              role="button"
+              tabIndex={0}
+              aria-label={`Songs played at ${i % 12 === 0 ? 12 : i % 12}:00 ${i < 12 ? 'AM' : 'PM'}`}
+              onClick={() => onHourClick(i)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onHourClick(i)
+                }
+              }}
+            />
+          )
+        })}
       {labelDefs.map(([h, lab]) => {
         const p2 = p(outerMaxR + 28, h * stepDeg)
         const dx = p2[0] - cx

@@ -1448,9 +1448,7 @@ button {
   font: inherit;
 }
 .artist-face i {
-  display: block;
   width: 76px;
-  height: 76px;
   max-width: 100%;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -2605,6 +2603,17 @@ button {
 }
 .chart-wedge {
   fill: var(--chart-wedge);
+}
+.chart-wedge-hit {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.chart-wedge-hit:hover,
+.chart-wedge-hit:focus-visible {
+  fill: var(--ink);
+  opacity: 0.06;
 }
 
 .profile-theme {
@@ -4233,7 +4242,10 @@ button {
 .song-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  /* Song details can be opened from within other modals (album, genre, hour), so
+     this backdrop must always stack above the highest of those (.album-modal-backdrop
+     at 115) rather than sharing their base z-index. */
+  z-index: 120;
   background: rgba(62, 48, 40, 0.48);
   backdrop-filter: blur(7px);
   display: flex;
@@ -6496,6 +6508,171 @@ button {
   }
 }
 
+.hour-modal {
+  width: min(640px, 100%);
+  /* Fixed card height like the other modals — the song list scrolls internally
+     (below) instead of growing the modal to fit however many songs there are. */
+  max-height: min(600px, 86vh);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.hour-modal .album-modal-head {
+  grid-template-columns: 92px minmax(0, 1fr);
+  padding-right: 0;
+  flex: none;
+}
+.hour-modal .album-modal-art,
+.hour-modal-art {
+  width: 92px;
+  height: 92px;
+}
+.hour-modal .album-modal-title h2 {
+  font-size: 28px;
+}
+.hour-modal-lower {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-top: 22px;
+  padding: 16px 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.hour-song-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -8px;
+}
+.hour-song-list::-webkit-scrollbar {
+  width: 7px;
+}
+.hour-song-list::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+}
+.hour-song-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px 68px;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+.hour-song-row:last-child {
+  border-bottom: 0;
+}
+.hour-song-row:hover {
+  background: var(--panel-hover);
+}
+.hour-song-row > span {
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: right;
+}
+.hour-song-row-head {
+  cursor: default;
+  min-height: auto;
+  padding-bottom: 8px;
+  position: sticky;
+  top: 0;
+  background: var(--surface-raised);
+  z-index: 1;
+}
+.hour-song-row-head:hover {
+  background: transparent;
+}
+.hour-song-row-head span:first-child {
+  text-align: left;
+}
+.hour-song-row-head span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.hour-song-copy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.hour-song-cover {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--surface-tint);
+  color: var(--ink-muted);
+  display: grid;
+  place-items: center;
+}
+.hour-song-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hour-song-text {
+  min-width: 0;
+}
+.hour-song-text strong {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hour-song-text small {
+  display: block;
+  font-size: 10px;
+  color: var(--ink-muted);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hour-modal-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  padding: 30px 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+.hour-modal-actions {
+  margin-top: 20px;
+  flex: none;
+}
+.hour-modal-actions .album-close-action {
+  width: 100%;
+}
+@media (max-width: 800px) {
+  .hour-modal {
+    max-height: min(560px, 82vh);
+  }
+}
+@media (max-width: 480px) {
+  .hour-modal {
+    max-height: 78dvh;
+  }
+  .hour-song-row {
+    grid-template-columns: minmax(0, 1fr) 40px 52px;
+  }
+}
+
 /* 0.6.8 typography + custom year dropdown */
 :root {
   font-family:
@@ -7841,6 +8018,51 @@ button {
   aspect-ratio: 1;
   margin: 0 auto;
   overflow: visible;
+}
+.activity-clock-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.activity-clock-toggle {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--surface-tint);
+  flex-shrink: 0;
+}
+.activity-clock-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(0);
+}
+.activity-clock-toggle[data-active='today'] .activity-clock-toggle-thumb {
+  transform: translateX(calc(100% + 2px));
+}
+.activity-clock-toggle button {
+  position: relative;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+.activity-clock-toggle button.is-active {
+  color: var(--ink);
 }
 .activity-clock-stats {
   display: grid;

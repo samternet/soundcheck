@@ -8,11 +8,12 @@ import {
   DEVICE_ID_PREFIX,
   MIN_YEAR,
 } from './config.js'
+import type { AuthedUserId } from './session-types.js'
 
 export type OpenSession = {
   session_key: string
   connection_id: string
-  user_id: string
+  user_id: AuthedUserId
   username: string
   item_id: string
   track_title: string
@@ -377,7 +378,7 @@ export function deleteOpenSession(key: string) {
 
 export function recordPlayEvent(e: {
   connectionId: string
-  userId: string
+  userId: AuthedUserId
   username: string
   itemId: string
   trackTitle: string
@@ -414,7 +415,7 @@ export function recordPlayEvent(e: {
     })
 }
 
-export function ensureTrackingStart(userId: string) {
+export function ensureTrackingStart(userId: AuthedUserId) {
   const existing = db
     .prepare(
       'SELECT tracking_started_at, first_listening_at, unlock_override FROM user_meta WHERE user_id = ?',
@@ -438,7 +439,7 @@ export function ensureTrackingStart(userId: string) {
   }
 }
 
-export function trackingMeta(userId: string) {
+export function trackingMeta(userId: AuthedUserId) {
   const meta = ensureTrackingStart(userId)
   const years = (
     db
@@ -460,7 +461,7 @@ export function trackingMeta(userId: string) {
 
 // Admin-only escape hatch (see the migration above) — forces every gradual-unlock
 // module open early for just this one account, regardless of trackingStartedAt.
-export function setUnlockOverride(userId: string, value: boolean) {
+export function setUnlockOverride(userId: AuthedUserId, value: boolean) {
   ensureTrackingStart(userId)
   db.prepare('UPDATE user_meta SET unlock_override = ? WHERE user_id = ?').run(
     value ? 1 : 0,
@@ -493,7 +494,7 @@ const TRENDING_WINDOW_DAYS = 7
 /** How far back the per-genre daily sparkline reaches. */
 const GENRE_DAILY_WINDOW_DAYS = 90
 
-export function stats(userId: string, year: number) {
+export function stats(userId: AuthedUserId, year: number) {
   // All calendar-based reporting is evaluated in the container's configured
   // timezone (TZ). This keeps Soundcheck correct for installations outside UTC.
   const base = { userId, year: String(year) }
@@ -790,6 +791,28 @@ export function stats(userId: string, year: number) {
     FROM play_events WHERE user_id=@userId AND ${yearWhere} GROUP BY hour ORDER BY hour`,
     )
     .all(base) as any[]
+  // Same shape as `hourly`, but scoped to just today (not the selected year) so
+  // the Listening Clock can offer a "today" view alongside its yearly one.
+  const todayHourly = db
+    .prepare(
+      `SELECT CAST(strftime('%H',started_at/1000,'unixepoch','localtime') AS INTEGER) hour, SUM(listened_ms) listened_ms, COUNT(*) plays
+    FROM play_events WHERE user_id=@userId
+      AND strftime('%Y-%m-%d',started_at/1000,'unixepoch','localtime')=strftime('%Y-%m-%d','now','localtime')
+    GROUP BY hour ORDER BY hour`,
+    )
+    .all({ userId }) as any[]
+  // Per-song breakdown backing the "what did I listen to" popup on the Today view of
+  // the Listening Clock. Flat rows (not pre-bucketed by hour) since the frontend already
+  // has `todayHourly` to know which hours have anything to show.
+  const todayHourlySongs = db
+    .prepare(
+      `SELECT CAST(strftime('%H',started_at/1000,'unixepoch','localtime') AS INTEGER) hour,
+      item_id, track_title, album_name, artist_name, COUNT(*) plays, SUM(listened_ms) listened_ms
+    FROM play_events WHERE user_id=@userId
+      AND strftime('%Y-%m-%d',started_at/1000,'unixepoch','localtime')=strftime('%Y-%m-%d','now','localtime')
+    GROUP BY hour,item_id ORDER BY hour,plays DESC,listened_ms DESC`,
+    )
+    .all({ userId }) as any[]
   // SQLite's %w gives 0=Sunday..6=Saturday; shift so the array is Monday-first (index 0=Mon..6=Sun)
   // to match how the rest of the app (and most listening-activity charts) present a week.
   const weekdayRows = db
@@ -1080,6 +1103,8 @@ export function stats(userId: string, year: number) {
     genreAttributedPlays: Number(genreTotal.toFixed(3)),
     monthly,
     hourly,
+    todayHourly,
+    todayHourlySongs,
     devices,
     weekday,
     dailyCalendar,

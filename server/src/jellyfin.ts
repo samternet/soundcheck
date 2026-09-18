@@ -1,4 +1,5 @@
 import { APP_NAME, JELLYFIN_TIMEOUT_MS, VERSION } from './config.js'
+import { trustUserId, type AuthedUserId } from './session-types.js'
 
 /**
  * Jellyfin reports every duration and position in .NET ticks (100-nanosecond
@@ -25,7 +26,7 @@ export type JellyfinSession = {
   playbackStartTimeTicks: number
   playlistItemId: string
   repeatMode: string
-  userId: string
+  userId: AuthedUserId
   username: string
   itemId: string
   trackTitle: string
@@ -138,7 +139,9 @@ export async function getActiveSessions(
       playbackStartTimeTicks: Number(s.PlayState?.PlaybackStartTimeTicks || 0),
       playlistItemId: String(s.PlayState?.PlaylistItemId || ''),
       repeatMode: String(s.PlayState?.RepeatMode || 'RepeatNone'),
-      userId: String(s.UserId || ''),
+      // Trusted here because it comes straight from Jellyfin's own /Sessions
+      // response, not from anything a Soundcheck browser client can influence.
+      userId: trustUserId(String(s.UserId || '')),
       username: String(s.UserName || ''),
       itemId: String(s.NowPlayingItem?.Id || ''),
       trackTitle: String(s.NowPlayingItem?.Name || ''),
@@ -160,7 +163,7 @@ export async function searchItems(
   token: string,
   userId: string,
   term: string,
-  type: 'MusicArtist' | 'MusicAlbum',
+  type: 'MusicArtist' | 'MusicAlbum' | 'Audio',
   deviceId?: string,
 ): Promise<any[]> {
   const params = new URLSearchParams({

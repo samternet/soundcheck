@@ -33,6 +33,7 @@ import {
   normalizeUrl,
 } from './jellyfin.js'
 import { pollAll, startTracker } from './tracker.js'
+import { trustUserId, type AuthedUserId } from './session-types.js'
 import {
   ARTWORK_CACHE_CONTROL,
   ARTWORK_CACHE_DIR,
@@ -57,7 +58,7 @@ const sessions = new Map<
   string,
   {
     connectionId: string
-    userId: string
+    userId: AuthedUserId
     username: string
     isAdministrator: boolean
     jellyfinToken: string
@@ -165,7 +166,7 @@ const unauthorized = (res: express.Response) =>
 // natural expiry, never as a side effect of redeploying.
 function createSession(
   connectionId: string,
-  userId: string,
+  userId: AuthedUserId,
   username: string,
   isAdministrator: boolean,
   jellyfinToken: string,
@@ -202,7 +203,9 @@ for (const row of loadActiveWebSessions()) {
     const token = decrypt(row.token_ciphertext, row.token_iv, row.token_tag)
     sessions.set(row.id, {
       connectionId: row.connection_id,
-      userId: row.jellyfin_user_id,
+      // Trusted: this row was only ever written by createSession below with an
+      // already-trusted id, never from a client request.
+      userId: trustUserId(row.jellyfin_user_id),
       username: row.username,
       isAdministrator: Boolean(row.is_administrator),
       jellyfinToken: token,
@@ -336,9 +339,24 @@ app.get('/api/media/resolve', async (req, res) => {
 app.post('/api/media/batch', async (req, res) => {
   const jc = jellyfinAuthFor(req)
   if (!jc) return unauthorized(res)
-  const itemIds = Array.isArray(req.body?.itemIds)
-    ? req.body.itemIds.map(String).slice(0, MAX_BATCH_ITEM_IDS)
-    : []
+  // De-duplicated before the cap so a client that requests the same id more than
+  // once (the same song can appear in several dashboard sections) can't burn the
+  // fixed budget on repeats and starve other ids out of this batch. Each entry
+  // carries the title/artist Soundcheck recorded for it, used below to recover
+  // an id Jellyfin no longer recognizes (see the fallback after getItemsByIds).
+  const requestedItems = new Map<string, { title: string; artist: string }>()
+  if (Array.isArray(req.body?.items)) {
+    for (const raw of req.body.items) {
+      const id = String(raw?.id || '')
+      if (id && !requestedItems.has(id))
+        requestedItems.set(id, {
+          title: String(raw?.title || '').trim(),
+          artist: String(raw?.artist || '').trim(),
+        })
+      if (requestedItems.size >= MAX_BATCH_ITEM_IDS) break
+    }
+  }
+  const itemIds = [...requestedItems.keys()]
   const artistNames = Array.isArray(req.body?.artistNames)
     ? req.body.artistNames.map(String).filter(Boolean).slice(0, MAX_BATCH_NAMES)
     : []
@@ -394,6 +412,70 @@ app.post('/api/media/batch', async (req, res) => {
         albumArtwork: album?.ImageTags?.Primary ? artworkUrl(String(item.AlbumId)) : null,
         artistArtwork:
           artist?.ImageTags?.Primary && artistItem?.Id ? artworkUrl(String(artistItem.Id)) : null,
+        favorite: Boolean(item.UserData?.IsFavorite),
+        jellyfinUrl: jellyfinItemUrl(jc.connection.server_url, id),
+      }
+    }
+    // An id play_events recorded can go stale if Jellyfin later rescans the
+    // library and reassigns it a new internal id (common for compilation/
+    // various-artist tracks). Recover those with an exact title (+ artist,
+    // when given) search, keyed under the *original* id so the client's
+    // `media[item:<original id>]` lookup still finds it.
+    const missingIds = itemIds.filter(id => !itemMap[`item:${id}`])
+    const fallbackResults = await Promise.all(
+      missingIds.map(async originalId => {
+        const meta = requestedItems.get(originalId)
+        const title = meta?.title
+        if (!title) return null
+        try {
+          const found = await searchItems(
+            jc.connection.server_url,
+            jc.token,
+            jc.session.userId,
+            title,
+            'Audio',
+            jc.deviceId,
+          )
+          const exact =
+            found.find(
+              (x: any) =>
+                String(x.Name || '').toLowerCase() === title.toLowerCase() &&
+                (!meta.artist ||
+                  String(x.AlbumArtist || x.Artists?.[0] || '').toLowerCase() ===
+                    meta.artist.toLowerCase()),
+            ) ||
+            found.find((x: any) => String(x.Name || '').toLowerCase() === title.toLowerCase()) ||
+            found[0]
+          if (!exact?.Id) return null
+          const full = await getItem(
+            jc.connection.server_url,
+            jc.token,
+            jc.session.userId,
+            String(exact.Id),
+            jc.deviceId,
+          )
+          return full ? ([originalId, full] as const) : null
+        } catch {
+          return null
+        }
+      }),
+    )
+    for (const row of fallbackResults) {
+      if (!row) continue
+      const [originalId, item] = row
+      const artistItem = Array.isArray(item.ArtistItems) ? item.ArtistItems[0] : null
+      const id = String(item.Id || originalId)
+      itemMap[`item:${originalId}`] = {
+        id,
+        name: String(item.Name || ''),
+        type: String(item.Type || ''),
+        albumId: String(item.AlbumId || ''),
+        artistId: String(artistItem?.Id || ''),
+        artistName: String(item.AlbumArtist || artistItem?.Name || item.Artists?.[0] || ''),
+        albumName: String(item.Album || ''),
+        artwork: item.ImageTags?.Primary ? artworkUrl(id) : null,
+        albumArtwork: item.AlbumId ? artworkUrl(String(item.AlbumId)) : null,
+        artistArtwork: null,
         favorite: Boolean(item.UserData?.IsFavorite),
         jellyfinUrl: jellyfinItemUrl(jc.connection.server_url, id),
       }
@@ -655,14 +737,54 @@ app.get('/api/song/:itemId', async (req, res) => {
   const itemId = String(req.params.itemId || '')
   const year = parseYear(req.query.year)
   if (!itemId) return res.status(400).json({ error: 'itemId is required' })
-  const item = await getItem(
+  let item = await getItem(
     userAuth.connection.server_url,
     userAuth.token,
     userAuth.session.userId,
     itemId,
     userAuth.deviceId,
   )
+  if (!item) {
+    // The id play_events recorded can go stale if Jellyfin later rescans the
+    // library and reassigns this track a new internal id (common for
+    // compilation/various-artist tracks). Fall back to an exact title (+
+    // artist, when given) match so the song can still be found and its
+    // current artwork/link shown; the play history below stays keyed by the
+    // original id regardless, since that's what was actually recorded.
+    const title = String(req.query.title || '').trim()
+    const artistHint = String(req.query.artist || '').trim()
+    if (title) {
+      const found = await searchItems(
+        userAuth.connection.server_url,
+        userAuth.token,
+        userAuth.session.userId,
+        title,
+        'Audio',
+        userAuth.deviceId,
+      )
+      const exact =
+        found.find(
+          (x: any) =>
+            String(x.Name || '').toLowerCase() === title.toLowerCase() &&
+            (!artistHint ||
+              String(x.AlbumArtist || x.Artists?.[0] || '').toLowerCase() ===
+                artistHint.toLowerCase()),
+        ) ||
+        found.find((x: any) => String(x.Name || '').toLowerCase() === title.toLowerCase()) ||
+        found[0]
+      if (exact?.Id) {
+        item = await getItem(
+          userAuth.connection.server_url,
+          userAuth.token,
+          userAuth.session.userId,
+          String(exact.Id),
+          userAuth.deviceId,
+        )
+      }
+    }
+  }
   if (!item) return res.status(404).json({ error: 'Jellyfin item not found' })
+  const resolvedId = String(item.Id || itemId)
   const params = [jc.session.userId, year, itemId]
   const statsRow = db
     .prepare(
@@ -682,7 +804,7 @@ app.get('/api/song/:itemId', async (req, res) => {
     const userData = await getItemUserData(
       userAuth.connection.server_url,
       userAuth.token,
-      itemId,
+      resolvedId,
       userAuth.deviceId,
     )
     favorite = Boolean(userData?.IsFavorite)
@@ -969,10 +1091,13 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     if (!connection) throw new Error('Unable to initialize the Soundcheck server connection')
-    ensureTrackingStart(String(a.user.Id))
+    // Trusted here: a.user.Id came from Jellyfin's own AuthenticateByName response,
+    // not from anything the request body controls.
+    const authedUserId = trustUserId(String(a.user.Id))
+    ensureTrackingStart(authedUserId)
     const sessionId = createSession(
       connection.id,
-      String(a.user.Id),
+      authedUserId,
       String(a.user.Name || username),
       isAdministrator,
       String(a.token),

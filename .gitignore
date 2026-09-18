@@ -31,3 +31,6 @@ Thumbs.db
 
 # Logs
 npm-debug.log*
+
+# Local AI assistant instructions
+CLAUDE.md

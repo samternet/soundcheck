@@ -99,8 +99,12 @@ export const endpoints = {
   mediaResolve: (type: 'MusicArtist' | 'MusicAlbum', name: string, artist?: string) =>
     `${API_BASE}/media/resolve?type=${type}&name=${encodeURIComponent(name)}` +
     (artist ? `&artist=${encodeURIComponent(artist)}` : ''),
-  song: (itemId: string, year: number) =>
-    `${API_BASE}/song/${encodeURIComponent(itemId)}?year=${year}`,
+  song: (itemId: string, year: number, meta?: { title?: string; artist?: string }) =>
+    `${API_BASE}/song/${encodeURIComponent(itemId)}?year=${year}` +
+    // title/artist let the server fall back to a name search when this id has
+    // gone stale (Jellyfin reassigns internal ids on some library rescans).
+    (meta?.title ? `&title=${encodeURIComponent(meta.title)}` : '') +
+    (meta?.artist ? `&artist=${encodeURIComponent(meta.artist)}` : ''),
   songFavorite: (itemId: string) => `${API_BASE}/song/${encodeURIComponent(itemId)}/favorite`,
   artist: (name: string, year: number) =>
     `${API_BASE}/artist/${encodeURIComponent(name)}?year=${year}`,
