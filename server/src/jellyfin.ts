@@ -41,9 +41,32 @@ export type JellyfinSession = {
   genres: string[]
 }
 
+// Never a legitimate Jellyfin address, but classically abused for SSRF once an
+// attacker can make this server issue an HTTP request to a host of their choosing
+// (see the first-time-setup jellyfinUrl accepted in index.ts's /api/auth/login):
+// 169.254.169.254 and the rest of the link-local block serve cloud instance
+// metadata (AWS/GCP/Azure) that would leak credentials if fetched and returned.
+const BLOCKED_HOSTNAME = /^(169\.254\.|\[?fe80:)/i
+
 export function normalizeUrl(value: string) {
-  let url = value.trim().replace(/\/+$/, '')
-  if (!/^https?:\/\//i.test(url)) url = `http://${url}`
+  let url = value.trim()
+  while (url.endsWith('/')) url = url.slice(0, -1)
+  // Only bare host[:port] input (no scheme at all) gets http:// assumed — a value
+  // that already names a different scheme (ftp://, gopher://) must fail the
+  // protocol check below rather than being wrapped into a deceptive http://ftp://… string.
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) url = `http://${url}`
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error('Invalid Jellyfin server URL')
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:')
+    throw new Error('Jellyfin server URL must use http or https')
+  if (parsed.username || parsed.password)
+    throw new Error('Jellyfin server URL must not contain a username or password')
+  if (BLOCKED_HOSTNAME.test(parsed.hostname))
+    throw new Error('Jellyfin server URL may not target a link-local address')
   return url
 }
 

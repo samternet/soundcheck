@@ -97,6 +97,38 @@ app.set('trust proxy', 'loopback, linklocal, uniquelocal')
 const LOGIN_MAX_FAILURES = 10
 const LOGIN_WINDOW_MS = 15 * 60 * 1000
 
+/**
+ * General request budget per client address, independent of the stricter
+ * failed-login limiter below: cheap protection against a client hammering
+ * any authenticated route (media resolve/batch, artwork, sync, etc.).
+ */
+const API_RATE_LIMIT_MAX = 300
+const API_RATE_LIMIT_WINDOW_MS = 60 * 1000
+
+function createRateLimiter(max: number, windowMs: number) {
+  const hits = new Map<string, { count: number; resetAt: number }>()
+  setInterval(() => {
+    const now = Date.now()
+    for (const [key, entry] of hits) if (entry.resetAt <= now) hits.delete(key)
+  }, windowMs).unref()
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const key = req.ip || req.socket.remoteAddress || 'unknown'
+    const now = Date.now()
+    const entry = hits.get(key)
+    if (!entry || entry.resetAt <= now) {
+      hits.set(key, { count: 1, resetAt: now + windowMs })
+      return next()
+    }
+    entry.count += 1
+    if (entry.count > max) {
+      res.setHeader('Retry-After', Math.ceil((entry.resetAt - now) / 1000).toString())
+      return res.status(429).json({ error: 'Too many requests' })
+    }
+    next()
+  }
+}
+app.use('/api', createRateLimiter(API_RATE_LIMIT_MAX, API_RATE_LIMIT_WINDOW_MS))
+
 function createLoginLimiter(maxFailures: number, windowMs: number) {
   const failures = new Map<string, { count: number; resetAt: number }>()
   const current = (key: string) => {
