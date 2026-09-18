@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here, newest first.
 
+## v0.9.2
+
+### Security
+
+- Closed a polynomial-ReDoS finding in Jellyfin server URL normalization
+  (a regex-based trailing-slash trim).
+- Hardened the first-time-setup Jellyfin server URL against SSRF: rejects
+  non-http(s) schemes, embedded credentials, and link-local/cloud-metadata
+  hosts (e.g. `169.254.169.254`).
+- Added a per-IP rate limiter in front of all `/api` routes.
+
 ## v0.9.1
 
 ### Added
